@@ -7,6 +7,6 @@ def component = "frontend"
 
 withPipeline("java", product, component) {
   after('checkout') {
-    echo 'rhubarb-frontend checked out'
+    echo 'sln-frontend checked out'
   }
 }
