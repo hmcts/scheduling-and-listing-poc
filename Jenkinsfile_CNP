@@ -1,0 +1,12 @@
+#!groovy
+
+@Library("Infrastructure")
+
+def product = "snl"
+def component = "frontend"
+
+withPipeline("nodejs", product, component) {
+  after('checkout') {
+    echo 'rhubarb-frontend checked out'
+  }
+}
