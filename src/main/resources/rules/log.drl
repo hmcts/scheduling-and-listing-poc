@@ -1,0 +1,117 @@
+package uk.gov.hmcts.reform.sandl;
+import uk.gov.hmcts.reform.sandl.model.jurisdiction.*;
+import uk.gov.hmcts.reform.sandl.model.person.*;
+import uk.gov.hmcts.reform.sandl.model.venue.*;
+import uk.gov.hmcts.reform.sandl.model.schedule.*;
+import uk.gov.hmcts.reform.sandl.model.session.*;
+import uk.gov.hmcts.reform.sandl.model.problem.*;
+
+rule "Jurisdiction"
+when
+	$j : Jurisdiction ( )
+then
+	System.out.println("Jurisdiction " + $j.name + " " + $j.id);
+end
+
+rule "Service"
+when
+	$s : Service ( )
+then
+	System.out.println("Service " + $s.name);
+end
+
+rule "CaseType"
+when
+	$c : CaseType ( )
+then
+	System.out.println("Case Type " + $c.name);
+end
+
+rule "HearingType"
+when
+	$h : HearingType ( )
+then
+	System.out.println("Hearing Type " + $h.name);
+end
+
+rule "HearingRole"
+when
+	$h : HearingRole ( )
+then
+	System.out.println("Hearing Role " + $h.name);
+end
+
+rule "Person"
+when
+	$p : Person ( )
+then
+	System.out.println("Person " + $p.name);
+end
+
+rule "Room"
+when
+	$r : Room (  )
+	$v : Venue ( id == $r.venueId )
+	$g : Region ( id == $v.regionId )
+then
+	System.out.println("Room " + $r.name + " is in " + $v.name + " in " + $g.name);
+end
+
+rule "Venue in cluster"
+when
+	$v : Venue ( )
+	$c : Cluster ( id == $v.clusterId )
+	$r : Region ( id == $c.regionId, id == $v.regionId )
+then
+	System.out.println("Venue " + $v.name + " is in cluster " + $c.name + " in " + $r.name);
+end
+
+rule "Misdefined cluster"
+when
+	$v : Venue ( )
+	$c : Cluster ( id == $v.clusterId, regionId != $v.clusterId )
+then
+	System.out.println("Venue " + $v.name + " in cluster " + $c.name + " is in a different region");
+end
+
+rule "Qualifications"
+when
+	$p : Person ( )
+	$hr : HearingRole ( )
+	$q : Qualification ( personId == $p.id, hearingRoleId == $hr.id )
+	$ht : HearingType ( id == $hr.hearingTypeId )
+	$ct : CaseType ( id == $ht.caseTypeId )
+	$s : Service ( id == $ct.serviceId )
+then
+	System.out.println($p.name + " is qualified: " + $s.name + ":" + $ht.name + ":" + $hr.name);
+end
+
+rule "Availability"
+when
+	$p : Person ( )
+	$a : Available ( subjectId == $p.id )
+then
+	System.out.println($p.name + " is available from " + $a.begin + " to " + $a.end);
+end
+
+rule "Availability2"
+when
+	$p : Person ( )
+	$a : Available ( subjectId == $p.id )
+then
+	System.out.println($p.name + " is " + $a.status + " from " + $a.begin + " to " + $a.end);
+end
+
+rule "Region"
+when
+	$r : Region ( )
+then
+	System.out.println("############################# Region: " + $r.name + " : " + $r.id);
+end
+
+rule "Cluster"
+when
+	$c : Cluster ( )
+then
+	System.out.println("############################## Cluster: " + $c.name + " : " + $c.id);
+end

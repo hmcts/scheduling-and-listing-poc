@@ -1,0 +1,18 @@
+package uk.gov.hmcts.reform.sandl;
+import uk.gov.hmcts.reform.sandl.model.jurisdiction.*;
+import uk.gov.hmcts.reform.sandl.model.person.*;
+import uk.gov.hmcts.reform.sandl.model.venue.*;
+import uk.gov.hmcts.reform.sandl.model.schedule.*;
+import uk.gov.hmcts.reform.sandl.model.session.*;
+import uk.gov.hmcts.reform.sandl.model.problem.*;
+
+rule "Session participant must be available"
+when
+	$session : Session (  )
+	$participant : SessionParticipant ( sessionId == $session.id )
+	$role : HearingRole ( id == $participant.hearingRoleId )
+	$person : Person ( id == $participant.personId )
+	not Available ( subjectId == $person.id, begin <= $session.begin, end >= $session.end )
+then
+	insertLogical ( new Problem("{0} is not available to be {1} in session on {2}", $person.name, $role.name, $session.begin) );
+end
