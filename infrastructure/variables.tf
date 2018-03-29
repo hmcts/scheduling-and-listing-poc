@@ -1,7 +1,7 @@
 variable "product" {
   type        = "string"
   default     = "snl"
-  description = "The name of your application"
+  description = "Scheduling and Listing "
 }
 
 variable "location" {

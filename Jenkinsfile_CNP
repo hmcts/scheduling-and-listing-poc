@@ -5,7 +5,7 @@
 def product = "snl"
 def component = "frontend"
 
-withPipeline("nodejs", product, component) {
+withPipeline("java", product, component) {
   after('checkout') {
     echo 'rhubarb-frontend checked out'
   }
