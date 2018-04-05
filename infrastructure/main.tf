@@ -6,7 +6,7 @@ module "frontend" {
   ilbIp                = "${var.ilbIp}"
   is_frontend          = true
   subscription         = "${var.subscription}"
-  additional_host_name = "snl.platform.hmcts.net"
+  additional_host_name = "snl.reform.hmcts.net"
 
   app_settings = {
     # REDIS_HOST                   = "${module.redis-cache.host_name}"
