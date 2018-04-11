@@ -1,3 +1,8 @@
+locals {
+  app_full_name = "${var.product}-${var.component}"
+  ase_name = "${data.terraform_remote_state.core_apps_compute.ase_name[0]}"
+  local_env = "${(var.env == "preview" || var.env == "spreview") ? (var.env == "preview" ) ? "aat" : "saat" : var.env}"
+}
 module "frontend" {
   source               = "git@github.com:hmcts/moj-module-webapp"
   product              = "${var.product}-frontend"
