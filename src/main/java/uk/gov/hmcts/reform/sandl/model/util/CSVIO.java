@@ -116,7 +116,7 @@ public class CSVIO
 	{
 		for (FileToClass fileToClass : FILE_TO_CLASS)
 		{
-			Collection<Identified> objects = rulesEngine.getStatedFacts(Identified.class, o -> fileToClass.clazz.isAssignableFrom(o.getClass()));
+			Collection<Identified> objects = rulesEngine.getFacts(Identified.class, o -> fileToClass.clazz.isAssignableFrom(o.getClass()));
 			store(directory, fileToClass.fileName, fileToClass.clazz, objects);
 		}
 	}

@@ -12,6 +12,8 @@ import uk.gov.hmcts.reform.sandl.model.problem.Problem;
 import uk.gov.hmcts.reform.sandl.model.schedule.Available;
 import uk.gov.hmcts.reform.sandl.model.session.Session;
 import uk.gov.hmcts.reform.sandl.model.session.SessionParticipant;
+import uk.gov.hmcts.reform.sandl.model.transaction.TransactionInsert;
+import uk.gov.hmcts.reform.sandl.model.transaction.TransactionRollback;
 import uk.gov.hmcts.reform.sandl.model.util.CSVIO;
 import uk.gov.hmcts.reform.sandl.model.util.UUIDUtil;
 
@@ -37,48 +39,59 @@ public class Test
 		System.out.println("After Setup\n===========");
 		listSessions();
 		listProblems();
+		System.out.println("====================");
 		// Delete session for judge jones on 1 and 2 Jan 2017
-		for (Session session : rulesEngine.getEngineFacts(Session.class, s -> s.begin.equals(LocalDateTime.of(2017,1,1,10,0))))
+		for (Session session : rulesEngine.getFacts(Session.class, s -> s.begin.equals(LocalDateTime.of(2017,1,1,10,0))))
 		{
 			rulesEngine.retractFact(session);
 		}
-		for (Session session : rulesEngine.getEngineFacts(Session.class, s -> s.begin.equals(LocalDateTime.of(2017,1,2,10,0))))
+		for (Session session : rulesEngine.getFacts(Session.class, s -> s.begin.equals(LocalDateTime.of(2017,1,2,10,0))))
 		{
 			rulesEngine.retractFact(session);
 		}
 		rulesEngine.fireAllRules();
 		System.out.println("After Delete Sessions\n====================");
-		listSessions();
+//		listSessions();
 		listProblems();
+		System.out.println("====================");
 		// Create availability for judge jones between 8 and 11 Jan 2017
 		Available available = new Available();
 		available.id = UUIDUtil.uuid();
 		available.subjectId = JUDGE_JONES_ID;
 		available.begin = LocalDateTime.of(2017,1,8,0,0);
 		available.end = LocalDateTime.of(2017,1,12,0,0);
-		rulesEngine.assertFact(available);
+		UUID transactionId = UUIDUtil.uuid();
+		rulesEngine.insert(new TransactionInsert(transactionId, available));
+//		rulesEngine.assertFact(available);
 		rulesEngine.fireAllRules();
-		System.out.println("After Create Avaialbility\n====================");
-		listSessions();
+		System.out.println("After Create Availability\n====================");
+//		listSessions();
 		listProblems();
+		System.out.println("====================");
+		rulesEngine.insert(new TransactionRollback(transactionId));
+		rulesEngine.fireAllRules();
+		System.out.println("After Rollback Create Availability\n====================");
+//		listSessions();
+		listProblems();
+		System.out.println("====================");
 	}
 
 	public void listSessions()
 	{
 		System.out.println("Sessions\n--------");
 		int index = 0;
-		for (Session session : rulesEngine.getEngineFacts(Session.class, s -> true))
+		for (Session session : rulesEngine.getFacts(Session.class, s -> true))
 		{
 			System.out.print((index++) + " : Session " + session.id + " starts " + session.begin);
-			for (SessionParticipant participant : rulesEngine.getStatedFacts(SessionParticipant.class, p -> p.sessionId.equals(session.id)))
+			for (SessionParticipant participant : rulesEngine.getFacts(SessionParticipant.class, p -> p.sessionId.equals(session.id)))
 			{
 				System.out.print(" with role [ ");
-				for (HearingRole role : rulesEngine.getStatedFacts(HearingRole.class, r -> r.id.equals(participant.hearingRoleId)))
+				for (HearingRole role : rulesEngine.getFacts(HearingRole.class, r -> r.id.equals(participant.hearingRoleId)))
 				{
 					System.out.print(role.name + " ");
 				}
 				System.out.print("] filled by [ ");
-				for (Person person : rulesEngine.getStatedFacts(Person.class, p -> p.id.equals(participant.personId)))
+				for (Person person : rulesEngine.getFacts(Person.class, p -> p.id.equals(participant.personId)))
 				{
 					System.out.print(person.name + " ");
 				}
@@ -90,7 +103,7 @@ public class Test
 	public void listProblems()
 	{
 		System.out.println("Problems\n--------");
-		for (Problem problem : rulesEngine.getEngineFacts(Problem.class, p -> true))
+		for (Problem problem : rulesEngine.getFacts(Problem.class, p -> true))
 		{
 			System.out.println(problem);
 		}

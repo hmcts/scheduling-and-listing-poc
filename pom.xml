@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>uk.gov.hmcts.reform</groupId>
-	<artifactId>sandl.model</artifactId>
+	<artifactId>sandl.model.new</artifactId>
 	<version>0.1.0-SNAPSHOT</version>
 
 	<properties>

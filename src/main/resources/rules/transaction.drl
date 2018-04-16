@@ -1,0 +1,78 @@
+package uk.gov.hmcts.reform.sandl;
+import uk.gov.hmcts.reform.sandl.model.common.*;
+import uk.gov.hmcts.reform.sandl.model.transaction.*;
+
+rule "Transactional Insert"
+	salience 1000000
+when
+	$insert : TransactionInsert ( )
+then
+	insert ( $insert.fact );
+	insert (new TransactionInserted( $insert.transactionId, $insert.fact ) );
+	delete ( $insert );
+end
+
+rule "Transactional Delete"
+	salience 1000000
+when
+	$delete : TransactionDelete ( )
+	$fact : Identified ( id == $delete.factId )
+then
+	delete ( $fact );
+	insert ( new TransactionDeleted( $delete.transactionId, $fact ) );
+	delete ( $delete );
+end
+
+rule "Rollback Transactional Insert"
+	salience 1000000
+when
+	$rollback : TransactionRollback ( )
+	$inserted : TransactionInserted ( transactionId == $rollback.transactionId )
+then
+	delete ( $inserted.fact );
+	delete ( $inserted );
+end
+
+rule "Rollback Transactional Delete"
+	salience 1000000
+when
+	$rollback : TransactionRollback ( )
+	$deleted : TransactionDeleted ( transactionId == $rollback.transactionId )
+then
+	insert ( $deleted.fact );
+	delete ( $deleted );
+end
+
+rule "Commit Transactional Insert"
+	salience 1000000
+when
+	$commit : TransactionCommit ( )
+	$inserted : TransactionInserted ( transactionId == $commit.transactionId )
+then
+	delete ( $inserted );
+end
+
+rule "Commit Transactional Delete"
+	salience 1000000
+when
+	$commit : TransactionCommit ( )
+	$deleted : TransactionDeleted ( transactionId == $commit.transactionId )
+then
+	delete ( $deleted );
+end
+
+rule "Clean Up Transaction Commit"
+	salience -1000000
+when
+	$commit : TransactionCommit ( )
+then
+	delete ( $commit );
+end
+
+rule "Clean Up Transaction Rollback"
+	salience -1000000
+when
+	$rollback : TransactionRollback ( )
+then
+	delete ( $rollback );
+end
