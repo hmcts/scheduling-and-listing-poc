@@ -6,16 +6,14 @@ import lombok.Data;
 import uk.gov.hmcts.reform.sandl.model.common.Identified;
 
 @Data
-public class Retracted
+public class Retracting
 {
 	private final UUID transactionId;
 	private final Identified fact;
-	private final UUID factId;
 
-	public Retracted(UUID transactionId, Identified fact)
+	public Retracting(UUID transactionId, Identified fact)
 	{
 		this.transactionId = transactionId;
 		this.fact = fact;
-		this.factId = fact.id;
 	}
 }

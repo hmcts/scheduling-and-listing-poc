@@ -6,16 +6,14 @@ import lombok.Data;
 import uk.gov.hmcts.reform.sandl.model.common.Identified;
 
 @Data
-public class Asserted
+public class Asserting
 {
 	private final UUID transactionId;
 	private final Identified fact;
-	private final UUID factId;
 
-	public Asserted(UUID transactionId, Identified fact)
+	public Asserting(UUID transactionId, Identified fact)
 	{
 		this.transactionId = transactionId;
 		this.fact = fact;
-		this.factId = fact.id;
 	}
 }

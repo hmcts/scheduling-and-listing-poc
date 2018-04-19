@@ -26,22 +26,6 @@ public class TestTransactions
 		}
 	}
 
-	public static class B extends Identified
-	{
-		public int b;
-		
-		public B(int b)
-		{
-			this.id = UUIDUtil.uuid();
-			this.b = b;
-		}
-
-		public String toString()
-		{
-			return "B ( " + this.id + " , " + this.b + " )";
-		}
-	}
-
 	public static void main(String[] args) throws Exception
 	{
 		new TestTransactions().run();

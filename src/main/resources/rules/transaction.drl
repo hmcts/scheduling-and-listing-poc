@@ -10,7 +10,7 @@ import uk.gov.hmcts.reform.sandl.model.transaction.*;
  * If a fact with the same ID already exists, it is deleted.
  * The new fact is inserted.
  *
- * Retracted and Asserted facts are inserted to reflect
+ * Retracting and Asserting facts are inserted to reflect
  * the actions taken, allowing future commit or rollback of
  * the transaction.
  * 
@@ -26,10 +26,10 @@ rule "Transactional Update"
 	salience 1000001
 when
 	$assert : Assert ( )
-	$fact : Identified ( id == $assert.factId )
+	$fact : Identified ( id == $assert.fact.id )
 then
 	delete ( $fact )
-	insert ( new Retracted( $assert.getTransactionId(), $fact ) );
+	insert ( new Retracting( $assert.getTransactionId(), $fact ) );
 end
 
 rule "Transactional Insert"
@@ -38,7 +38,7 @@ when
 	$assert : Assert ( )
 then
 	insert ( $assert.getFact() );
-	insert ( new Asserted( $assert.getTransactionId(), $assert.getFact() ) );
+	insert ( new Asserting( $assert.getTransactionId(), $assert.getFact() ) );
 	delete ( $assert );
 end
 
@@ -48,7 +48,7 @@ end
  * has a transaction identifier.
  * 
  * If a fact with the same ID already exists, it is deleted and a
- * Retracted fact is inserted to reflect the action taken, allowing
+ * Retracting fact is inserted to reflect the action taken, allowing
  * future commit or rollback of the transaction.
  */
 rule "Transactional Retract"
@@ -58,7 +58,7 @@ when
 	$fact : Identified ( id == $retract.factId )
 then
 	delete ( $fact );
-	insert ( new Retracted( $retract.getTransactionId(), $fact ) );
+	insert ( new Retracting( $retract.getTransactionId(), $fact ) );
 	delete ( $retract );
 end
 
@@ -69,10 +69,10 @@ rule "Rollback Transactional Assert"
 	salience 1000000
 when
 	$rollback : Rollback ( )
-	$asserted : Asserted ( transactionId == $rollback.transactionId )
+	$asserting : Asserting ( transactionId == $rollback.transactionId )
 then
-	delete ( $asserted.getFact() );
-	delete ( $asserted );
+	delete ( $asserting.getFact() );
+	delete ( $asserting );
 end
 
 /*
@@ -82,24 +82,24 @@ rule "Rollback Transactional Retract"
 	salience 1000000
 when
 	$rollback : Rollback ( )
-	$retracted : Retracted ( transactionId == $rollback.transactionId )
+	$retracting : Retracting ( transactionId == $rollback.transactionId )
 then
-	insert ( $retracted.getFact() );
-	delete ( $retracted );
+	insert ( $retracting.getFact() );
+	delete ( $retracting );
 end
 
 /*
  * Commit an assert performed by a previous transaction.
- * This just removes the fact that links the asserted fact to the
+ * This just removes the fact that links the asserting fact to the
  * transaction, making the fact permanent.
  */
 rule "Commit Transactional Assert"
 	salience 1000000
 when
 	$commit : Commit ( )
-	$asserted : Asserted ( transactionId == $commit.transactionId )
+	$asserting : Asserting ( transactionId == $commit.transactionId )
 then
-	delete ( $asserted );
+	delete ( $asserting );
 end
 
 /*
@@ -111,9 +111,9 @@ rule "Commit Transactional Retract"
 	salience 1000000
 when
 	$commit : Commit ( )
-	$retracted : Retracted ( transactionId == $commit.transactionId )
+	$retracting : Retracting ( transactionId == $commit.transactionId )
 then
-	delete ( $retracted );
+	delete ( $retracting );
 end
 
 /*
