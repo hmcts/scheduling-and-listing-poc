@@ -11,6 +11,16 @@ import org.kie.api.runtime.rule.FactHandle;
 
 import uk.gov.hmcts.reform.sandl.model.common.Identified;
 
+/**
+ * @deprecated
+ * This is a purely interim class.  Lookup/query of facts should be implemented be either
+ * (a) a proper persistence layer; (b) backward-chaining queries in the rules engine.
+ * 
+ * This class provides a wrapper which enables the rules engine to be queried to retrieve
+ * facts from working memory.
+ * @author jon
+ */
+@Deprecated
 public class FactIndex
 {
 	private final Map<Class<?>, Map<UUID, Identified>> indexesByClass = new HashMap<>();

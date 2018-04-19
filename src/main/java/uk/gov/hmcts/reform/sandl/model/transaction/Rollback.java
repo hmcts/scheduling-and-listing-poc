@@ -2,11 +2,14 @@ package uk.gov.hmcts.reform.sandl.model.transaction;
 
 import java.util.UUID;
 
-public class TransactionCommit
-{
-	public final UUID transactionId;
+import lombok.Data;
 
-	public TransactionCommit(UUID transactionId)
+@Data
+public class Rollback
+{
+	private final UUID transactionId;
+
+	public Rollback(UUID transactionId)
 	{
 		this.transactionId = transactionId;
 	}

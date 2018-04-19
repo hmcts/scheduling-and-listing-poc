@@ -2,77 +2,142 @@ package uk.gov.hmcts.reform.sandl;
 import uk.gov.hmcts.reform.sandl.model.common.*;
 import uk.gov.hmcts.reform.sandl.model.transaction.*;
 
+/*
+ * A pair of rules to handle a transactional upsert of a fact
+ * (subclass of Identified).  The fact is supplied within an
+ * instance of Assert, which also has a transaction identifier.
+ * 
+ * If a fact with the same ID already exists, it is deleted.
+ * The new fact is inserted.
+ *
+ * Retracted and Asserted facts are inserted to reflect
+ * the actions taken, allowing future commit or rollback of
+ * the transaction.
+ * 
+ * If the insert rule were to fire first, then the fact added
+ * would match the update condition, so salience is used to
+ * ensure that the update rule will always fire first for
+ * any given assertion.
+ *
+ * Low salience rules ensure that assertions are removed at
+ * the end of rule processing.
+ */
+rule "Transactional Update"
+	salience 1000001
+when
+	$assert : Assert ( )
+	$fact : Identified ( id == $assert.factId )
+then
+	delete ( $fact )
+	insert ( new Retracted( $assert.getTransactionId(), $fact ) );
+end
+
 rule "Transactional Insert"
 	salience 1000000
 when
-	$insert : TransactionInsert ( )
+	$assert : Assert ( )
 then
-	insert ( $insert.fact );
-	insert (new TransactionInserted( $insert.transactionId, $insert.fact ) );
-	delete ( $insert );
+	insert ( $assert.getFact() );
+	insert ( new Asserted( $assert.getTransactionId(), $assert.getFact() ) );
+	delete ( $assert );
 end
 
-rule "Transactional Delete"
+/*
+ * Handle a transactional delete of a fact (subclass of Identified).
+ * The fact is supplied within an instance of Retract, which also
+ * has a transaction identifier.
+ * 
+ * If a fact with the same ID already exists, it is deleted and a
+ * Retracted fact is inserted to reflect the action taken, allowing
+ * future commit or rollback of the transaction.
+ */
+rule "Transactional Retract"
 	salience 1000000
 when
-	$delete : TransactionDelete ( )
-	$fact : Identified ( id == $delete.factId )
+	$retract : Retract ( )
+	$fact : Identified ( id == $retract.factId )
 then
 	delete ( $fact );
-	insert ( new TransactionDeleted( $delete.transactionId, $fact ) );
-	delete ( $delete );
+	insert ( new Retracted( $retract.getTransactionId(), $fact ) );
+	delete ( $retract );
 end
 
-rule "Rollback Transactional Insert"
+/*
+ * Roll back an assert performed by a previous transaction.
+ */
+rule "Rollback Transactional Assert"
 	salience 1000000
 when
-	$rollback : TransactionRollback ( )
-	$inserted : TransactionInserted ( transactionId == $rollback.transactionId )
+	$rollback : Rollback ( )
+	$asserted : Asserted ( transactionId == $rollback.transactionId )
 then
-	delete ( $inserted.fact );
-	delete ( $inserted );
+	delete ( $asserted.getFact() );
+	delete ( $asserted );
 end
 
-rule "Rollback Transactional Delete"
+/*
+ * Roll back a retract performed by a previous transaction.
+ */
+rule "Rollback Transactional Retract"
 	salience 1000000
 when
-	$rollback : TransactionRollback ( )
-	$deleted : TransactionDeleted ( transactionId == $rollback.transactionId )
+	$rollback : Rollback ( )
+	$retracted : Retracted ( transactionId == $rollback.transactionId )
 then
-	insert ( $deleted.fact );
-	delete ( $deleted );
+	insert ( $retracted.getFact() );
+	delete ( $retracted );
 end
 
-rule "Commit Transactional Insert"
+/*
+ * Commit an assert performed by a previous transaction.
+ * This just removes the fact that links the asserted fact to the
+ * transaction, making the fact permanent.
+ */
+rule "Commit Transactional Assert"
 	salience 1000000
 when
-	$commit : TransactionCommit ( )
-	$inserted : TransactionInserted ( transactionId == $commit.transactionId )
+	$commit : Commit ( )
+	$asserted : Asserted ( transactionId == $commit.transactionId )
 then
-	delete ( $inserted );
+	delete ( $asserted );
 end
 
-rule "Commit Transactional Delete"
+/*
+ * Commit a retract performed by a previous transaction.
+ * This just removes the fact that caches the deleted fact and links it
+ * to the transaction, making removal of the fact permanent.
+ */
+rule "Commit Transactional Retract"
 	salience 1000000
 when
-	$commit : TransactionCommit ( )
-	$deleted : TransactionDeleted ( transactionId == $commit.transactionId )
+	$commit : Commit ( )
+	$retracted : Retracted ( transactionId == $commit.transactionId )
 then
-	delete ( $deleted );
+	delete ( $retracted );
 end
 
+/*
+ * Remove any Commit instances.  These are intended only to survive for
+ * a single execution of the rules engine, so are removed with a very
+ * low salience to ensure all relevant processing has already been done.
+ */
 rule "Clean Up Transaction Commit"
 	salience -1000000
 when
-	$commit : TransactionCommit ( )
+	$commit : Commit ( )
 then
 	delete ( $commit );
 end
 
+/*
+ * Remove any Rollback instances.  These are intended only to survive for
+ * a single execution of the rules engine, so are removed with a very
+ * low salience to ensure all relevant processing has already been done.
+ */
 rule "Clean Up Transaction Rollback"
 	salience -1000000
 when
-	$rollback : TransactionRollback ( )
+	$rollback : Rollback ( )
 then
 	delete ( $rollback );
 end

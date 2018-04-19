@@ -9,6 +9,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -73,27 +74,30 @@ public class CSVIO
 		this.rulesEngine = rulesEngine;
 	}
 
-	public void loadAll(File directory) throws IOException
+	public void loadAll(UUID transactionId, File directory) throws IOException
 	{
 		for (FileToClass fileToClass : FILE_TO_CLASS)
 		{
-			load(directory, fileToClass.fileName, fileToClass.clazz);
+			load(transactionId, directory, fileToClass.fileName, fileToClass.clazz);
 		}
 	}
 
-	public void load(File directory, String fileName, Class<? extends Identified> clazz) throws IOException
+	public void load(UUID transactionId, File directory, String fileName, Class<? extends Identified> clazz) throws IOException
 	{
 		System.out.println("Loading " + clazz.getName());
 		try (Reader reader = new FileReader(new File(directory, fileName)))
 		{
-			load(reader, clazz);
+			load(transactionId, reader, clazz);
 		}
 	}
 
-	public void load(Reader reader, Class<? extends Identified> clazz) throws IOException
+	public void load(UUID transactionId, Reader reader, Class<? extends Identified> clazz) throws IOException
 	{
 		List<Identified> facts = loadFacts(reader, clazz);
-		rulesEngine.processTransaction(facts);
+		for (Identified fact : facts)
+		{
+			rulesEngine.assertFacts(transactionId, fact);
+		}
 	}
 
 	public List<Identified> loadFacts(Reader reader, Class<? extends Identified> clazz) throws IOException

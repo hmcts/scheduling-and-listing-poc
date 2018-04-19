@@ -12,8 +12,6 @@ import uk.gov.hmcts.reform.sandl.model.problem.Problem;
 import uk.gov.hmcts.reform.sandl.model.schedule.Available;
 import uk.gov.hmcts.reform.sandl.model.session.Session;
 import uk.gov.hmcts.reform.sandl.model.session.SessionParticipant;
-import uk.gov.hmcts.reform.sandl.model.transaction.TransactionInsert;
-import uk.gov.hmcts.reform.sandl.model.transaction.TransactionRollback;
 import uk.gov.hmcts.reform.sandl.model.util.CSVIO;
 import uk.gov.hmcts.reform.sandl.model.util.UUIDUtil;
 
@@ -34,21 +32,28 @@ public class Test
 	public void run() throws Exception
 	{
 		File fixtureDirectory = new File(FIXTURE_DIRECTORY);
-		new CSVIO(rulesEngine).loadAll(fixtureDirectory);
-		setUpSessions();
+		UUID transactionId = UUIDUtil.uuid();
+		new CSVIO(rulesEngine).loadAll(transactionId, fixtureDirectory);
+		setUpSessions(transactionId);
+		rulesEngine.commit(transactionId);
+		rulesEngine.fireAllRules();
 		System.out.println("After Setup\n===========");
 		listSessions();
 		listProblems();
 		System.out.println("====================");
 		// Delete session for judge jones on 1 and 2 Jan 2017
+		transactionId = UUIDUtil.uuid();
 		for (Session session : rulesEngine.getFacts(Session.class, s -> s.begin.equals(LocalDateTime.of(2017,1,1,10,0))))
 		{
-			rulesEngine.retractFact(session);
+			rulesEngine.retractFacts(transactionId, session);
 		}
+		rulesEngine.commit(transactionId);
+		transactionId = UUIDUtil.uuid();
 		for (Session session : rulesEngine.getFacts(Session.class, s -> s.begin.equals(LocalDateTime.of(2017,1,2,10,0))))
 		{
-			rulesEngine.retractFact(session);
+			rulesEngine.retractFacts(transactionId, session);
 		}
+		rulesEngine.commit(transactionId);
 		rulesEngine.fireAllRules();
 		System.out.println("After Delete Sessions\n====================");
 //		listSessions();
@@ -60,15 +65,15 @@ public class Test
 		available.subjectId = JUDGE_JONES_ID;
 		available.begin = LocalDateTime.of(2017,1,8,0,0);
 		available.end = LocalDateTime.of(2017,1,12,0,0);
-		UUID transactionId = UUIDUtil.uuid();
-		rulesEngine.insert(new TransactionInsert(transactionId, available));
+		transactionId = UUIDUtil.uuid();
+		rulesEngine.assertFacts(transactionId, available);
 //		rulesEngine.assertFact(available);
 		rulesEngine.fireAllRules();
 		System.out.println("After Create Availability\n====================");
 //		listSessions();
 		listProblems();
 		System.out.println("====================");
-		rulesEngine.insert(new TransactionRollback(transactionId));
+		rulesEngine.rollback(transactionId);
 		rulesEngine.fireAllRules();
 		System.out.println("After Rollback Create Availability\n====================");
 //		listSessions();
@@ -109,15 +114,16 @@ public class Test
 		}
 	}
 
-	public void setUpSessions()
+	public void setUpSessions(UUID transactionId)
 	{
 		for (int i = 1; i < 32; ++i)
 		{
 			Session session = createSession(LocalDateTime.of(2017,1,i,10,0), Duration.ofHours(3));
 			SessionParticipant participant = createSessionParticipant(session, JUDGE_ROLE_ID, JUDGE_JONES_ID);
-			rulesEngine.assertFact(session);
-			rulesEngine.assertFact(participant);
+			rulesEngine.assertFacts(transactionId, session);
+			rulesEngine.assertFacts(transactionId, participant);
 		}
+		rulesEngine.commit(transactionId);
 		rulesEngine.fireAllRules();
 	}
 
