@@ -1,0 +1,18 @@
+package uk.gov.hmcts.reform.sandl;
+import uk.gov.hmcts.reform.sandl.test.*;
+import static uk.gov.hmcts.reform.sandl.model.util.UUIDUtil.uuid;
+
+rule "Init A"
+when
+then
+	System.out.println("--------------------------------- Starting rule engine A.");
+end
+
+rule "From A to B"
+when
+	$a : TestTransactionController.A ( )
+then
+	insertLogical (new TestTransactionController.B ( uuid(), $a.value + 1 ));
+	System.out.println("->->-> A to B for " + $a.value + " ->->->->->->->->->->->->");
+	System.out.println($a);
+end

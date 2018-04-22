@@ -1,2 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<kmodule xmlns="http://www.drools.org/xsd/kmodule"/>
+<kmodule xmlns="http://www.drools.org/xsd/kmodule">
+	<kbase name="A" packages="common,a">
+		<ksession name="A" type="stateful"/>
+	</kbase>
+	<kbase name="B" packages="common,b">
+		<ksession name="B" type="stateful"/>
+	</kbase>
+</kmodule>
