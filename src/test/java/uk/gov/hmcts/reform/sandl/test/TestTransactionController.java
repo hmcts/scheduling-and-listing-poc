@@ -14,7 +14,9 @@ import uk.gov.hmcts.reform.sandl.engine.RulesEngine;
 import uk.gov.hmcts.reform.sandl.model.common.Identified;
 import uk.gov.hmcts.reform.sandl.model.transaction.Assert;
 import uk.gov.hmcts.reform.sandl.model.transaction.Change;
+import uk.gov.hmcts.reform.sandl.model.transaction.Commit;
 import uk.gov.hmcts.reform.sandl.model.transaction.Retract;
+import uk.gov.hmcts.reform.sandl.model.transaction.Rollback;
 import uk.gov.hmcts.reform.sandl.model.util.UUIDUtil;
 
 public class TestTransactionController
@@ -50,13 +52,15 @@ public class TestTransactionController
 		new TestTransactionController().run();
 	}
 
-	public void run()
+	public void run() throws InterruptedException
 	{
-		setupTransaction();
+//		testRulesTransaction(true);
+		testRulesTransaction(false);
 	}
 
-	public void setupTransaction()
+	public void testRulesTransaction(boolean commit) throws InterruptedException
 	{
+		System.out.println("=== Starting testRulesTransaction(commit = " + commit + ") ==============================================================");
 		UserTransactionController controller = buildController();
 		UUID transactionId = UUIDUtil.uuid();
 		Assert cause = new Assert(transactionId, new A(UUIDUtil.uuid(), 0));
@@ -77,19 +81,33 @@ public class TestTransactionController
 						showWorkingMemory("Engine WM", engine);
 					}
 					System.out.println("============================================================================");
-					System.exit(0);
+					UserTransactionEvent commitEvent = new UserTransactionEvent(transactionId, commit ? new Commit(transactionId) : new Rollback(transactionId));
+					controller.start(
+							commitEvent,
+							ev -> {
+								System.out.println("=== Completed testRulesTransaction(commit = " + commit + ") ==============================================================");
+								for (Change change : ev.getCauses())
+								{
+									System.out.println(change);
+								}
+								System.out.println("============================================================================");
+								System.out.println("=== Engines ================================================================");
+								for (RulesEngine engine : engines)
+								{
+									showWorkingMemory("Engine WM", engine);
+								}
+								System.out.println("============================================================================");
+								try
+								{
+									Thread.sleep(3000); // TODO: synchronize properly
+								}
+								catch (InterruptedException ex)
+								{
+									//discard
+								}
+								controller.stop();
+							});
 				});
-		while (true)
-		{
-			try
-			{
-				Thread.sleep(10000);
-			}
-			catch (InterruptedException e)
-			{
-				// discard
-			}
-		}
 	}
 
 	public void showWorkingMemory(String message, RulesEngine engine)

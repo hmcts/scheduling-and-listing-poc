@@ -2,16 +2,13 @@ package uk.gov.hmcts.reform.sandl.model.transaction;
 
 import java.util.UUID;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
-public abstract class Change extends Command
+@AllArgsConstructor
+public abstract class Change
 {
+	private final UUID transactionId;
 	private final UUID factId;
-
-	protected Change(UUID transactionId, UUID factId)
-	{
-		super(transactionId);
-		this.factId = factId;
-	}
 }

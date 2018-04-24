@@ -141,3 +141,15 @@ when
 then
 	delete ( $rollback );
 end
+
+/*
+ * Remove dangling Retract instances.  These can currently be sent to
+ * an engine which does not contain the fact in question.
+ */
+ rule "Clean Up Dangling Retract"
+ 	salience -1000000
+ when
+ 	$retract : Retract ( )
+ then
+ 	delete ( $retract );
+ end

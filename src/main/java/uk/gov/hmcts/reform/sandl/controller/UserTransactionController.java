@@ -30,9 +30,14 @@ public class UserTransactionController
 		handleEvent(userTransaction, startEvent, eventController, new AtomicInteger(0), onComplete);
 	}
 
+	public void stop()
+	{
+		eventController.stop();
+	}
+
 	private static void handleEvent(UserTransaction userTransaction, UserTransactionEvent event, UserTransactionEventController eventController, AtomicInteger pendingEventCount, Consumer<UserTransaction> onComplete)
 	{
-		if (!event.getChanges().isEmpty())
+		if (!event.getChanges().isEmpty() || event.getCommand() != null)
 		{
 			pendingEventCount.incrementAndGet();
 			eventController.handle(

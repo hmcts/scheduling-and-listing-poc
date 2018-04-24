@@ -22,6 +22,7 @@ import uk.gov.hmcts.reform.sandl.controller.UserTransactionEventEndpoint;
 import uk.gov.hmcts.reform.sandl.model.common.Identified;
 import uk.gov.hmcts.reform.sandl.model.transaction.Assert;
 import uk.gov.hmcts.reform.sandl.model.transaction.Change;
+import uk.gov.hmcts.reform.sandl.model.transaction.Command;
 import uk.gov.hmcts.reform.sandl.model.transaction.Commit;
 import uk.gov.hmcts.reform.sandl.model.transaction.Retract;
 import uk.gov.hmcts.reform.sandl.model.transaction.Rollback;
@@ -48,6 +49,11 @@ public class RulesEngine implements UserTransactionEventEndpoint// implements Ru
 			for (Change change : event.getChanges())
 			{
 				ksession.insert(change);
+			}
+			Command command = event.getCommand();
+			if (command != null)
+			{
+				ksession.insert(command);
 			}
 			ksession.fireAllRules();
 			UserTransactionEvent result = new UserTransactionEvent(transactionId);
